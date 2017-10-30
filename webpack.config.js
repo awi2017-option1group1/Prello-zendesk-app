@@ -1,96 +1,108 @@
 /* eslint-env node */
-const path = require("path");
-const webpack = require("webpack");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
-const extractStyles = new ExtractTextPlugin("main.css");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const externalAssets = require("./lib/javascripts/external_assets");
+var path = require('path');
+var webpack = require('webpack');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var extractStyles = new ExtractTextPlugin('main.css');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+
+var externalAssets = {
+  css: [
+    'https://assets.zendesk.com/apps/sdk-assets/css/1/zendesk_garden.css'
+  ],
+  js: [
+    'https://cdn.jsdelivr.net/g/lodash@4.14.0,handlebarsjs@4.0.5,jquery@3.1.0',
+    'https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js'
+  ]
+}
 
 module.exports = {
+  progress: true,
   entry: {
     app: [
-      "babel-polyfill",
-      "./src/javascripts/index.js",
-      "./src/stylesheets/app.scss"
+      'babel-polyfill',
+      './src/javascripts/index.js',
+      './src/stylesheets/app.scss'
     ]
   },
   output: {
-    path: path.resolve(__dirname, "./dist/assets"),
-    filename: "main.js",
-    sourceMapFilename: "[file].map"
+    path: './dist/assets',
+    filename: 'main.js',
+    sourceMapFilename: '[file].map'
   },
   module: {
-    rules: [
+    preLoaders: [
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        enforce: "pre",
-        loader: "eslint-loader"
-      },
+        loader: 'eslint-loader'
+      }
+    ],
+    loaders: [
       {
         test: /\.(gif|jpe?g|png|svg|woff2?|ttf|eot)$/,
-        loader: "url-loader?limit=10000&name=[name].[ext]"
+        loader: 'url-loader?limit=10000&name=[name].[ext]'
       },
       {
         test: /\.scss$/,
-        use: extractStyles.extract({
-          fallback: "style-loader",
-          use: [
-            "css-loader?sourceMap&root=" +
-              path.resolve(__dirname, "./dist/assets"),
-            "sass-loader?sourceMap"
-          ]
-        })
+        loader: extractStyles.extract("style", ["css?sourceMap&root=" + path.resolve('./dist/assets'), "sass?sourceMap"])
       },
       {
         test: /\.json$/,
-        include: path.resolve(__dirname, "./src/translations"),
-        loader: "translations-loader",
-        options: {
-          runtime: "handlebars"
+        exclude: path.resolve(__dirname, './src/translations'),
+        loader: 'json-loader'
+      },
+      {
+        test: /\.json$/,
+        include: path.resolve(__dirname, './src/translations'),
+        loader: 'translations-loader',
+        query: {
+          runtime: 'handlebars'
         }
       },
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: "babel-loader"
+        loader: 'babel-loader',
+        query: {
+          presets: ['es2015']
+        }
       },
       {
         test: /\.(handlebars|hd?bs)$/,
-        loader: "handlebars-loader",
-        options: {
-          extensions: [".handlebars", ".hdbs", ".hbs"],
-          runtime: "handlebars",
-          inlineRequires: "/images/"
+        loader: 'handlebars-loader',
+        query: {
+          extensions: ['handlebars', 'hdbs', 'hbs'],
+          runtime: 'handlebars',
+          inlineRequires: '\/images\/'
         }
       }
     ]
   },
   resolveLoader: {
-    modules: ["node_modules", path.resolve(__dirname, "./lib/loaders")]
+    modulesDirectories: ['./lib/loaders', 'node_modules']
   },
   resolve: {
-    modules: ["node_modules", path.resolve(__dirname, "./lib/javascripts")],
+    modulesDirectories: ['node_modules', './lib/javascripts'],
     alias: {
-      app_manifest: path.resolve(__dirname, "./dist/manifest.json")
-    }
+      'app_manifest': path.join(__dirname, './dist/manifest.json')
+    },
+    extensions: ['', '.js']
   },
+  externalAssets: externalAssets,
   externals: {
-    handlebars: "Handlebars",
-    jquery: "jQuery",
-    lodash: "_",
-    moment: "moment",
-    zendesk_app_framework_sdk: "ZAFClient"
+    handlebars: 'Handlebars',
+    jquery: 'jQuery',
+    lodash: '_',
+    zendesk_app_framework_sdk: 'ZAFClient'
   },
-  devtool: "#eval",
+  devtool: '#eval',
   plugins: [
     extractStyles,
     new HtmlWebpackPlugin({
-      warning:
-        "AUTOMATICALLY GENERATED FROM ./lib/templates/layout.hdbs - DO NOT MODIFY THIS FILE DIRECTLY",
+      warning: 'AUTOMATICALLY GENERATED FROM ./lib/templates/layout.hdbs - DO NOT MODIFY THIS FILE DIRECTLY',
       vendorCss: externalAssets.css,
       vendorJs: externalAssets.js,
-      template: "!!handlebars-loader!./lib/templates/layout.hdbs"
+      template: '!!handlebars!./lib/templates/layout.hdbs'
     }),
     new webpack.optimize.UglifyJsPlugin({
       compress: {

@@ -1,1 +1,5 @@
-<p>{{t "hello" name=name}}</p>
+<div class="u-ta-center">
+    <p class="u-m">{{t "hello" name=name}}</p>
+
+    <button class="c-btn c-btn--primary" id="login">{{t "login_btn"}}</button>
+</div>
