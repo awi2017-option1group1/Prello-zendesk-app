@@ -1,0 +1,12 @@
+<i class="u-m">{{t "card_attached"}}</i>
+
+<div class="u-mv-sm">
+    <b>{{t "details"}}</b>
+    <p>{{t "details_board"}} {{ list.board.name }} </p>
+    <p>{{t "details_list"}} {{ list.name }} </p>
+    <p>{{t "details_card"}} {{ name }} </p>
+    <p>{{t "details_due_date"}} {{ due }} </p>
+</div>
+
+<button id="open-card" class="c-btn c-btn--primary">{{t "open_in_prello"}}</button>
+<button class="c-btn c-btn--danger">{{t "detach_card"}}</button>

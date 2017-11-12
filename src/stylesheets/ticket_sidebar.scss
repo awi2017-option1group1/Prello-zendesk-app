@@ -3,3 +3,34 @@ section[data-main] {
     margin-top: 5px;
   }
 }
+
+.c-btn.c-btn--danger {
+  border-color: #eb6651;
+  color: #eb6651;
+}
+
+.c-btn.c-btn--danger.is-hovered.is-hovered, .c-btn.c-btn--danger:hover:hover {
+  background-color: #f78978;
+}
+
+option:disabled {
+  color: #999999;
+  font-style: italic;
+}
+
+.c-txt__label {
+  line-height: 2;
+}
+
+.c-txt__input + .c-txt__hint {
+  margin-top: 2px;
+}
+
+select.c-txt__input--select {
+  width: 66%;
+}
+
+label.c-txt__label {
+  width: 100%;
+  font-size: 14px;
+}

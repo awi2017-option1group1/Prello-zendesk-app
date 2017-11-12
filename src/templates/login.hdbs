@@ -1,0 +1,5 @@
+<div class="u-ta-center">
+    <p class="u-m">{{t "hello" name=name}}</p>
+
+    <a class="c-btn c-btn--primary" id="login" href="http://localhost/boards/3">{{t "login_btn"}}</a>
+</div>
