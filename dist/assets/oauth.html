@@ -1,0 +1,43 @@
+<div class="content"></div>
+
+<script>
+
+    const parseAuthorizationCode = (uri) => {
+        // Parse the redirect query string and return the token parameter
+        var match = uri.match(/[#&?]code=([0-9a-f]{40})/);
+        if (match) {
+            return match[1] || null;
+        }
+        return null;
+    }
+
+    const sendAuthorizationCodeToParent = () => {
+        return new Promise((resolve, reject) => {
+            const token = parseAuthorizationCode(window.location.href);
+            if (window.opener != null) {
+                console.log(window.opener.location.origin);
+        
+                window.opener.postMessage({
+                    message: 'authenticated',
+                    token: token
+                }, window.opener.location.origin);
+        
+                resolve();
+            } else {
+                reject();
+            }
+        });
+    }
+
+    const content = document.querySelector('.content');
+
+    sendAuthorizationCodeToParent()
+    .then(() => {
+        content.innerHTML  = 'Taking you back to Zendesk...';
+        window.close();
+    })
+    .catch(() => {
+        content.innerHTML  = 'ðŸ˜ž Something went wrong. Please try again or try disabling your browser extensions.';
+    });
+
+</script>

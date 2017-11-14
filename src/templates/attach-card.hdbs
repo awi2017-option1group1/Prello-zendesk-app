@@ -1,0 +1,20 @@
+<a class="u-mb" id="back" href>{{t "cancel"}}</a>
+
+<div class="u-ta-center">
+    <div class="u-m">
+        {{board.name}} > {{list.name}}
+    </div>
+
+    <div class="c-txt u-mb-sm">
+        <label class="c-txt__label" for="board-selector"><span dir="ltr">{{t "step_3"}}</span></label>
+        <div>
+            <select id="card-selector" class="c-txt__input c-txt__input--select">
+                <option disabled selected value>{{t "select_card"}}</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="u-sm">
+        <button id="save-btn" class="c-btn c-btn--primary" disabled>{{t "attach_to_existing_card"}}</button>
+    </div>
+</div>

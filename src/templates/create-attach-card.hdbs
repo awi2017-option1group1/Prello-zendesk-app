@@ -1,0 +1,19 @@
+<a class="u-mb" id="back" href>{{t "cancel"}}</a>
+
+<div class="u-ta-center">
+    <div class="u-m">
+        {{board.name}} > {{list.name}}
+    </div>
+
+    <div class="u-sm">
+        <button class="c-btn c-btn--primary" id="create-card">{{t "create_new_card"}}</button>
+    </div>
+
+    <div class="u-sm">
+        {{t "or"}}
+    </div>
+
+    <div class="u-sm">
+        <button class="c-btn" id="attach-card">{{t "attach_to_existing_card"}}</button>
+    </div>
+</div>

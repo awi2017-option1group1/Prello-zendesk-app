@@ -11,28 +11,27 @@ class TicketSidebar {
 
     this.storage = new Storage(this._metadata.installationId);
     this.view = new View();
-    this.prello = new Prello(this.client, this.getCurrentPrelloAccessToken());
-
-    this.renderLogin = this.renderLogin.bind(this)
-    this.renderMain = this.renderMain.bind(this)
-    this.renderCreateCard = this.renderCreateCard.bind(this)
-    this.renderAttachCard = this.renderAttachCard.bind(this)
-    this.renderAttachedTicket = this.renderAttachedTicket.bind(this)
-
-    this.prello.getMe().then(
-      response => {
-        this.renderMain();
-      },
-      error => {
-        this.getCurrentUser().then(this.renderLogin);
-      }
-    );
+    
+    this.renderLogin = this.renderLogin.bind(this);
+    this.renderMain = this.renderMain.bind(this);
+    this.renderCreateOrAttachCard = this.renderCreateOrAttachCard.bind(this);
+    this.renderListSelection = this.renderListSelection.bind(this);
+    this.renderAttachToCard = this.renderAttachToCard.bind(this);
+    
+    this.login = this.login.bind(this);
+    this.reboot = this.reboot.bind(this);
+    
+    this.reboot();
 
     this.view.switchTo('loading');
-    this.client.invoke('resize', { width: '100%', height: '250px' });
+    this.client.invoke('resize', { width: '100%', height: '270px' });
   }
 
   // REQUEST FUNCTIONS
+
+  getOauthPageUrl() {
+    return this.client.get('assetURL:oauth\\.html');
+  }
 
   getCurrentUser() {
     return this.client.request({ url: '/api/v2/users/me.json' });
@@ -43,11 +42,11 @@ class TicketSidebar {
   }
 
   getCurrentPrelloUser() {
-    return this.storage.set('prello:userId');
+    return this.storage.get('prello:user');
   }
 
-  setCurrentPrelloUser(userId) {
-    this.storage.set('prello:userId', userId);
+  setCurrentPrelloUser(user) {
+    this.storage.set('prello:user', user);
   }
 
   getCurrentPrelloAccessToken() {
@@ -60,11 +59,11 @@ class TicketSidebar {
 
   // RENDER FUNCTIONS
 
-  renderLogin(data) {
+  renderLogin() {
     this.getCurrentUser()
     .then(data => {
       this.view.switchTo('login', data.user);
-      $('#login').addEventListener('click', this.login.bind(this));
+      $('#login').on('click', this.login);
     });
   }
 
@@ -77,36 +76,26 @@ class TicketSidebar {
         this.renderAttachedTicket(cardId);
     })
     .catch(() => {
-      this.view.switchTo('main');
-      $('#create-card').on('click', this.renderCreateCard);
-      $('#attach-card').on('click', this.renderAttachCard);
+      this.renderListSelection();
     })
   }
 
-  renderCreateCard() {
-    this.view.switchTo('create-card');
-    $('#back').on('click', (e) => {
+  renderCreateOrAttachCard(board, list) {
+    this.view.switchTo('create-attach-card', {
+      board: board,
+      list: list
+    });
+
+    $('#cancel').on('click', (e) => {
       e.preventDefault();
       this.renderMain();
     });
 
-    const boardSelector = $('#board-selector')
-    const listSelector = $('#list-selector')
-    const saveBtn = $('#save-btn')
-
-    const boardSelectorSeeLink = $('#board-selector-see')
-    boardSelectorSeeLink.hide()
-    boardSelectorSeeLink.on('click', (e) => {
-      e.preventDefault();
-      window.open(this.prello.getBoardUrl(boardSelector.val()), '_blank');
-    });
-
-    // Create the card then save it in the ticket
-    saveBtn.on('click', () => {
+    $('#create-card').on('click', () => {
       this.getCurrentTicket()
       .then(result => result.ticket)
       .then(ticket =>
-          this.prello.createCard(listSelector.val(), {
+          this.prello.createCard(list.id, {
             name: ticket.subject,
             desc: ticket.description
           })
@@ -119,11 +108,40 @@ class TicketSidebar {
       .catch(error => this.renderError(error));
     });
 
+    $('#attach-card').on('click', () => this.renderAttachToCard(board, list));
+  }
+
+  renderListSelection() {
+    const user = this.getCurrentPrelloUser();
+    this.view.switchTo('main', user);
+
+    let userBoards = [];
+    let boardLists = [];
+
+    const boardSelector = $('#board-selector');
+    const listSelector = $('#list-selector');
+    const saveBtn = $('#save-btn');
+
+    const boardSelectorSeeLink = $('#board-selector-see');
+    boardSelectorSeeLink.hide();
+    boardSelectorSeeLink.on('click', (e) => {
+      e.preventDefault();
+      window.open(this.prello.getBoardUrl(boardSelector.val()), '_blank');
+    });
+
+    saveBtn.on('click', () => {
+      this.renderCreateOrAttachCard(
+        userBoards.find(b => b.id == boardSelector.val()),
+        boardLists.find(l => l.id == listSelector.val())
+      )
+    });
+
     // Fill the boards select list
     this.prello.getBoards(
-      this.getCurrentPrelloUser()
+      this.getCurrentPrelloUser().uid
     )
     .then(boards => {
+      userBoards = boards;
       boards.forEach(board => {
         boardSelector.append(`<option value="${board.id}">${board.name}</option>`);
       });
@@ -143,6 +161,7 @@ class TicketSidebar {
       // Fill the lists select list
       this.prello.getLists(boardSelector.val())
       .then(lists => {
+        boardLists = lists;
         lists.forEach(list => {
           listSelector.append(`<option value="${list.id}">${list.name}</option>`);
         });
@@ -156,8 +175,42 @@ class TicketSidebar {
     });
   }
 
-  renderAttachCard() {
-    
+  renderAttachToCard(board, list) {
+    this.view.switchTo('attach-card', {
+      board: board,
+      list: list
+    });
+
+    $('#cancel').on('click', (e) => {
+      e.preventDefault();
+      this.renderCreateOrAttachCard(board, list);
+    });
+
+    const cardSelector = $('#card-selector');
+    const saveBtn = $('#save-btn');
+
+    saveBtn.on('click', () => {
+      this.saveCardIdInTicket(cardSelector.val())
+      .then(() => {
+        this.client.invoke('notify', 'Prello card created!', 'notice');
+        this.renderMain();
+      })
+      .catch(error => this.renderError(error));
+    });
+
+    // Fill the cards select list
+    this.prello.getCards(list.id)
+    .then(cards => {
+      cards.forEach(card => {
+        cardSelector.append(`<option value="${card.id}">${card.name}</option>`);
+      });
+    })
+    .catch(error => this.renderError(error));
+
+    // Handle changes when a card is selected
+    cardSelector.change(() => {
+      saveBtn.prop('disabled', false);
+    });
   }
 
   renderAttachedTicket(cardId) {
@@ -165,7 +218,15 @@ class TicketSidebar {
     .then(card => {
       this.view.switchTo('attached-card', card);
       $('#open-card').on('click', () => {
-        window.open(this.prello.getCardUrl(card.list.board.id, card.id), '_blank')
+        window.open(this.prello.getCardUrl(card.list.board.id, card.id), '_blank');
+      });
+
+      $('#detach-card').on('click', () => {
+        this.removeCardIdInTicket(card.id)
+        .then(() => {
+          this.renderMain();
+        })
+        .catch(error => this.renderError(error));
       });
     })
     .catch(error => this.renderError(error));
@@ -176,6 +237,19 @@ class TicketSidebar {
   }
 
   // HELPER FUNCTIONS
+
+  reboot() {
+    this.prello = new Prello(this.client, this.getCurrentPrelloAccessToken());
+    this.prello.getMe().then(
+      (response) => {
+        this.setCurrentPrelloUser(response.me)
+        this.renderMain();
+      },
+      () => {
+        this.getCurrentUser().then(this.renderLogin());
+      }
+    );
+  }
 
   getCardIdFromTicket() {
     return this.client.get('ticket.tags').then(data => {
@@ -192,6 +266,29 @@ class TicketSidebar {
 
   saveCardIdInTicket(cardId) {
     return this.client.invoke('ticket.tags.add', `prello#${cardId}`)
+  }
+
+  removeCardIdInTicket(cardId) {
+    return this.client.invoke('ticket.tags.remove', `prello#${cardId}`)
+  }
+
+  login() {
+    this.getOauthPageUrl().then((data) => {
+      const url = data['assetURL:oauth\\.html'];
+      if (url) {
+        const receiveMessage = (msg) => {
+          if (msg.origin == window.location.origin) {
+            this.prello.getZendeskAccessToken(msg.data.token)
+            .then(response => {
+              this.setCurrentPrelloAccessToken(response.access_token);
+              this.reboot();
+            });
+          }
+        }
+        window.open(this.prello.getZendeskOAuthUrl(url), '_blank');
+        window.addEventListener('message', receiveMessage, false);
+      }
+    });
   }
 
 }

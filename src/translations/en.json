@@ -9,18 +9,22 @@
   "hello": "Hello {{name}}! before starting to use Prello Zendesk App you need to login.",
   "login_btn": "Login to Prello",
 
-  "connect_to_prello": "Connect this ticket to Prello!",
   "or": "or",
   "create_new_card": "Create a new card",
   "attach_to_existing_card": "Attach to an existing card",
-
+  "cancel": "« Cancel",
+  
+  "connect_to_prello": "Connect this ticket to Prello!",
   "select_board": "Select a board",
   "select_list": "Select a list",
-  "create_card": "Create the card",
+  "continue_step_3": "Continue »",
   "open_board_in_prello": "Open this board in Prello",
   "step_1": "Step 1",
   "step_2": "Step 2",
-  "back_to_selection": "« Back to selection",
+  "connected_as": "You are connected to Prello as {{name}}!",
+
+  "step_3": "Step 3",
+  "select_card": "Select a card",
 
   "card_attached": "This ticket is attached to a card!",
   "details": "Details :",

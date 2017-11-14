@@ -2,11 +2,25 @@
 
 <div class="u-mv-sm">
     <b>{{t "details"}}</b>
-    <p>{{t "details_board"}} {{ list.board.name }} </p>
-    <p>{{t "details_list"}} {{ list.name }} </p>
-    <p>{{t "details_card"}} {{ name }} </p>
-    <p>{{t "details_due_date"}} {{ due }} </p>
+    <table>
+        <tr>
+            <td>{{t "details_board"}}</td>
+            <td>{{ list.board.name }}</td>
+        </tr>
+        <tr>
+            <td>{{t "details_list"}}</td>
+            <td>{{ list.name }}</td>
+        </tr>
+        <tr>
+            <td>{{t "details_card"}}</td>
+            <td>{{ name }}</td>        
+        </tr>
+        <tr>
+            <td>{{t "details_due_date"}}</td>
+            <td> {{ due }}</td>        
+        </tr>
+    </table>
 </div>
 
 <button id="open-card" class="c-btn c-btn--primary">{{t "open_in_prello"}}</button>
-<button class="c-btn c-btn--danger">{{t "detach_card"}}</button>
+<button id="detach-card" class="c-btn c-btn--danger">{{t "detach_card"}}</button>
