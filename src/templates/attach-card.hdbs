@@ -1,4 +1,4 @@
-<a class="u-mb" id="back" href>{{t "cancel"}}</a>
+<a class="u-mb" id="cancel-attach-to-card" href>{{t "cancel"}}</a>
 
 <div class="u-ta-center">
     <div class="u-m">

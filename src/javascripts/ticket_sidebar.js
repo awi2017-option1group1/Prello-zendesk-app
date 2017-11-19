@@ -23,6 +23,8 @@ class TicketSidebar {
     
     this.reboot();
 
+    this.getCurrentTicket().then(data => console.log(data))
+
     this.view.switchTo('loading');
     this.client.invoke('resize', { width: '100%', height: '270px' });
   }
@@ -92,6 +94,7 @@ class TicketSidebar {
     });
 
     $('#create-card').on('click', () => {
+      this.view.switchTo('loading');
       this.getCurrentTicket()
       .then(result => result.ticket)
       .then(ticket =>
@@ -100,7 +103,10 @@ class TicketSidebar {
             desc: ticket.description
           })
       )
-      .then(card => this.saveCardIdInTicket(card.id))
+      .then(card => {
+        this.writeZendeskAttachedComment(card.id);
+        return this.saveCardIdInTicket(card.id);
+      })
       .then(() => {
         this.client.invoke('notify', 'Prello card created!', 'notice');
         this.renderMain();
@@ -181,7 +187,7 @@ class TicketSidebar {
       list: list
     });
 
-    $('#cancel').on('click', (e) => {
+    $('#cancel-attach-to-card').on('click', (e) => {
       e.preventDefault();
       this.renderCreateOrAttachCard(board, list);
     });
@@ -190,7 +196,9 @@ class TicketSidebar {
     const saveBtn = $('#save-btn');
 
     saveBtn.on('click', () => {
-      this.saveCardIdInTicket(cardSelector.val())
+      this.view.switchTo('loading');
+      this.writeZendeskAttachedComment(cardSelector.val())
+      .then(() => this.saveCardIdInTicket(cardSelector.val()))
       .then(() => {
         this.client.invoke('notify', 'Prello card created!', 'notice');
         this.renderMain();
@@ -222,6 +230,7 @@ class TicketSidebar {
       });
 
       $('#detach-card').on('click', () => {
+        this.view.switchTo('loading');
         this.removeCardIdInTicket(card.id)
         .then(() => {
           this.renderMain();
@@ -255,9 +264,13 @@ class TicketSidebar {
     return this.client.get('ticket.tags').then(data => {
       const tags = data['ticket.tags']
       if (tags) {
-        const tag = tags.find(tag => tag.startsWith('prello#'))
+        let tag = tags.find(tag => tag.startsWith('prello'))
         if (tag) {
-          return tag.substring('prello#'.length)
+          if (tag.includes('#')) {
+            return tag.substring('prello#'.length)
+          } else {
+            return tag.substring('prello'.length)
+          }
         }
       } 
       throw new Error('Prello card id not found')
@@ -266,13 +279,33 @@ class TicketSidebar {
 
   saveCardIdInTicket(cardId) {
     return this.client.invoke('ticket.tags.add', `prello#${cardId}`)
+    .then(() => {
+      return this.client.get('ticket.postSaveAction')
+    })
   }
 
   removeCardIdInTicket(cardId) {
-    return this.client.invoke('ticket.tags.remove', `prello#${cardId}`)
+    return this.client.invoke('ticket.tags.remove', [`prello#${cardId}`, `prello${cardId}`])
+    .then(() => {
+      return this.client.get('ticket.postSaveAction')
+    })
+  }
+
+  writeZendeskAttachedComment(cardId) {
+    return this.client.get('ticket.id')
+    .then(data => {
+      const ticketId = data['ticket.id']
+      const comment = `**[Zendesk Prello App]**  
+This card (**#${cardId}**) has been attached to a [Zendesk ticket](https://d3v-prello.zendesk.com/agent/tickets/${ticketId}).   
+  
+*(This message has been automatically generated)*
+      `
+      return this.prello.createComment(cardId, comment)
+    })
   }
 
   login() {
+    this.view.switchTo('loading');
     this.getOauthPageUrl().then((data) => {
       const url = data['assetURL:oauth\\.html'];
       if (url) {
